@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<title>生态桌面 · EcoDesk v17</title>
+<title>生态桌面 · EcoDesk v18</title>
 <style>
   html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#9db86a;font-family:"Microsoft YaHei",system-ui,sans-serif;user-select:none;cursor:default}
   #bg,#sky,#mid,#gl,#c{position:absolute;inset:0;display:block}
@@ -16,7 +16,7 @@
   #shop,#garden,#settings,#inv{position:absolute;top:50%;left:50%;transform:translate(-50%,-52%);width:440px;max-height:70vh;overflow-y:auto;background:rgba(255,251,240,.97);border-radius:18px;padding:18px 20px;color:#4a3a26;display:none;box-shadow:0 10px 50px rgba(40,30,10,.35);z-index:50}
   #settings{width:392px}
   /* 商店：紧凑长圆方形（比洞窟稍大一点）+ 分类标签页，基本不用滚动 */
-  #shop{width:min(520px,58vw);max-height:62vh;border-radius:30px;padding:14px 16px 14px;display:none}
+  #shop{width:min(520px,58vw);max-height:62vh;border-radius:30px;padding:14px 16px 14px;display:none;transform:none;zoom:.75}
   #shop.open{display:flex;flex-direction:column}
   #shop h2{font-size:16px;margin-bottom:2px}
   #shopItems{overflow-y:auto;min-height:0;flex:1}
@@ -41,6 +41,7 @@
   .item .cost{color:#c07818;font-weight:500}
   #close,.pclose{float:right;cursor:pointer;color:#b0a088;font-size:18px}
   .qrow{display:flex;gap:8px;margin:4px 0 8px}
+  #quickFoodRow,#quickFertRow{flex-wrap:wrap}
   #rdInput{flex:1;background:rgba(120,90,40,.08);border:1px solid rgba(120,90,40,.22);border-radius:10px;
     padding:8px 10px;font-size:13px;color:#4a3a26;font-family:inherit;outline:none;text-transform:uppercase}
   #rdInput:focus{border-color:#5f9a3f}
@@ -151,6 +152,11 @@
   <div class="cat">狐狸管家</div>
   <div class="qrow" id="foxRow"></div>
   <div class="qrow" id="foxAutoRow"></div>
+  <div class="cat">长按水池 · 自动喂的鱼粮</div>
+  <div class="qrow" id="quickFoodRow"></div>
+  <div class="cat">长按草地 · 快捷动作（按住 2.5 秒）</div>
+  <div class="qrow" id="quickGrassRow"></div>
+  <div class="qrow" id="quickFertRow"></div>
   <div class="hint" id="foxHint"></div>
   <div class="cat">桌面图标适配</div>
   <div class="qrow" id="quietRow"></div>
@@ -308,6 +314,7 @@ function migrateSave(o){
   /* v5.1 互动层字段：只补字段不升版本号，旧档照常读，不丢数据 */
   if(!s.foxQ)s.foxQ='quiet';                        /* 狐狸说话频率：quiet/normal/chatty */
   if(s.foxAuto===undefined)s.foxAuto=1;             /* 管家自动出场：1=有话自己走出来 0=点了洞窟才出来 */
+  if(!s.quickAct)s.quickAct='water';                /* 长按草地快捷动作：water=浇水 fert=施肥 */
   if(!s.stats)s.stats={plant:0,water:0,harvest:0,dig:0,feed:0,coin:0};
   if(!s.seen)s.seen={};                             /* 首次行为标记（引导/里程碑） */
   if(s.snap===undefined)s.snap=null;                /* 离开时的花园快照（离线回归播报用） */
@@ -696,8 +703,50 @@ function updateQualityUI(){
   }
 }
 function openSettings(){
-  buildQualityUI();updateQualityUI();buildWeatherUI();buildQuietUI();buildSkinUI();buildFoxUI();
+  buildQualityUI();updateQualityUI();buildWeatherUI();buildQuietUI();buildSkinUI();buildFoxUI();buildQuickUI();
   showPanelOnly('settings');
+}
+/* 长按快捷动作设置：水池喂食用的鱼粮档 / 草地 2.5 秒动作（浇水或施肥）与肥料档 */
+function buildQuickUI(){
+  const fr=document.getElementById('quickFoodRow');
+  if(fr){
+    fr.innerHTML='';
+    Object.values(FOOD_LIB).forEach(F=>{
+      const b=document.createElement('button');
+      b.innerHTML=F.icon+' '+F.name+'<small>长按水池自动撒这档</small>';
+      b.style.whiteSpace='nowrap';
+      if(foodLv()===F.lv)b.classList.add('on');
+      b.onclick=()=>{S.foodLv=F.lv;saveGame();buildQuickUI();updateMenu();
+        toast('长按水池将自动撒：'+F.name+' '+F.icon)};
+      fr.appendChild(b);
+    });
+  }
+  const gr=document.getElementById('quickGrassRow');
+  if(gr){
+    gr.innerHTML='';
+    [['water','浇水','洒水壶自动浇一次'],['fert','施肥','用下面选的肥料施一次']].forEach(([k,lb,sb])=>{
+      const b=document.createElement('button');
+      b.innerHTML=lb+'<small>'+sb+'</small>';
+      b.style.whiteSpace='nowrap';
+      if((S.quickAct||'water')===k)b.classList.add('on');
+      b.onclick=()=>{S.quickAct=k;saveGame();buildQuickUI();
+        toast('长按草地改为自动'+(k==='water'?'浇水 🚿':'施肥 🧫'))};
+      gr.appendChild(b);
+    });
+  }
+  const fer=document.getElementById('quickFertRow');
+  if(fer){
+    fer.innerHTML='';
+    Object.values(FERT_LIB).forEach(F=>{
+      const b=document.createElement('button');
+      b.innerHTML=F.icon+' '+F.name+'<small>单次生长+'+Math.round(F.step*100)+'%</small>';
+      b.style.whiteSpace='nowrap';
+      if(fertLv()===F.lv)b.classList.add('on');
+      b.onclick=()=>{S.fertLv=F.lv;saveGame();buildQuickUI();
+        toast('施肥改用：'+F.name+' '+F.icon)};
+      fer.appendChild(b);
+    });
+  }
 }
 /* 狐狸说话频率：安静（默认）/ 正常 / 话痨，改完立刻生效 */
 const FOX_OPTS=[['quiet','安静','只在要紧事说'],['normal','正常','有事应一声'],['chatty','话痨','没事也聊两句']];
@@ -1537,7 +1586,7 @@ function layoutMenu(){
     const b=document.createElement('button');b.className='mbtn';
     b.style.left=fitX(cs.x+Math.cos(a)*R)+'px';b.style.top=fitY(cs.y+Math.sin(a)*R)+'px';
     b.innerHTML=ICONS[it.icon]+'<span class="lb">'+it.label+'</span>';
-    b.onclick=()=>it.act();box.appendChild(b);});
+    b.onclick=()=>{showMenuBtns(false);it.act()};box.appendChild(b);});
   if(menuOpen)showMenuBtns(true);
 }
 function showMenuBtns(show){
@@ -1550,10 +1599,11 @@ const pointerClose={cool:0};
 addEventListener('pointermove',e=>{
   if(!menuOpen||!ready)return;
   const cs=caveScr(),R=Math.max(88,caveHitR()*0.95);
-  if(Math.hypot(e.clientX-cs.x,e.clientY-cs.y)>R+46&&foxState==='out'){
+  if(Math.hypot(e.clientX-cs.x,e.clientY-cs.y)>R+46){
     if(Date.now()-pointerClose.cool<600)return;
     pointerClose.cool=Date.now();
-    toggleFox();
+    if(foxState==='out')toggleFox();
+    else showMenuBtns(false);          /* 狐狸不在洞外时菜单也要能收回去 */
   }
 });
 function dailySign(){const today=new Date().toDateString();
@@ -1567,6 +1617,21 @@ const SHOP_TABS={
   plant:'买种子、肥料和洒水壶，把花园打理起来',
   other:'花圃、仓库和更多内容'
 };
+/* 商店面板固定在洞窟旁边（右下角），zoom:.75 已整体缩小 1/4。
+   注意：zoom 会连 left/top 一起缩放，写样式值要除回 zoom 才是想要的视觉位置。 */
+function placeShopAtCave(){
+  const el=document.getElementById('shop');if(!el)return;
+  const cs=caveScr(),cp=cavePos();
+  const r=el.getBoundingClientRect();                 /* 视觉尺寸（zoom 后） */
+  const pw=r.width||340,ph=r.height||260;
+  const z=parseFloat(getComputedStyle(el).zoom)||1;
+  const gap=Math.max(8,BW*0.008);
+  let x=cs.x-pw-gap;                                  /* 右边贴着洞窟中心左侧（视觉坐标） */
+  let y=cs.y-ph-cp.h*VS*0.18;                         /* 底边悬在洞窟上方 */
+  x=Math.max(10,Math.min(W-pw-8,x));
+  y=Math.max(10,Math.min(H-ph-8,y));
+  el.style.left=Math.round(x/z)+'px';el.style.top=Math.round(y/z)+'px';
+}
 function openShop(tab){
   if(tab)shopTab=tab;
   document.querySelectorAll('#shopTabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===shopTab));
@@ -1576,7 +1641,7 @@ function openShop(tab){
   else if(shopTab==='plant')shopPlantPage(box);
   else shopOtherPage(box);
   showPanelOnly('shop');
-  document.getElementById('shop').classList.add('open');
+  placeShopAtCave();
 }
 function shopFishPage(box){
   const c=document.createElement('div');c.className='cat';c.textContent='🐟 池塘伙伴';box.appendChild(c);
@@ -2939,7 +3004,7 @@ cv.addEventListener('pointerdown',e=>{
       const FD=foodCur(),key='food'+FD.lv;
       if(!invCount(key)){toast('没有'+FD.name+'了，去商店买 🍚');return}
       if(feedAt(press.bx,press.by,false))toast('自动撒了一把'+FD.name+' 🍚');
-    }else quickWater(press.bx,press.by);
+    }else quickGrassAct(press.bx,press.by);
   },2500);
 });
 /* 长按草地 2.5s：洒水壶自动出现、就地浇一次（不用先在工具条里选浇水） */
@@ -2952,6 +3017,16 @@ function quickWater(bx,by){
   AUTOCAN.push({x:bx,y:by,t0:Date.now()});
   if(AUTOCAN.length>4)AUTOCAN.shift();
   toast('自动浇了一次水 🚿');
+}
+/* 长按草地 2.5s 的动作可在设置里切换：浇水（默认）/ 施肥（用当前档肥料） */
+function quickFert(bx,by){
+  const keep=GTOOL;GTOOL={act:'fert'};
+  gApplyAt(bx,by,true);                                /* 库存扣减/提示都在 gApplyAt 里 */
+  GTOOL=keep;
+}
+function quickGrassAct(bx,by){
+  if((S.quickAct||'water')==='fert')quickFert(bx,by);
+  else quickWater(bx,by);
 }
 window.addEventListener('pointerup',()=>{
   gPaint=false;

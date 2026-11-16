@@ -1,11 +1,11 @@
 {
- "version": "7",
- "builtAt": 1794810274907,
+ "version": "9",
+ "builtAt": 1794810510987,
  "files": [
   {
    "path": "index.html",
    "size": 240628,
-   "hash": "58a51467a796badfdea470347f9d338db8ce9fc9b03aa69b8747168ac863875d"
+   "hash": "9dfe4fadb75be90840138cbeade73d8e8f6f2bf9952651469f72161d2aec2d70"
   },
   {
    "path": "assets/cloud-sdk.js",
@@ -13,24 +13,29 @@
    "hash": "fd82877f6c3ac9836e604ad400ac5d84b26a39e98d1d871536781046a7ac3d27"
   },
   {
+   "path": "assets/clouds/cirrus.png",
+   "size": 341483,
+   "hash": "e2eac2d7db6955d7651acf2ab1e105e635819aeeb7581ea9c36fbd175f3ca8bb"
+  },
+  {
+   "path": "assets/clouds/cumulus-big.png",
+   "size": 399589,
+   "hash": "7a9a3e2a4229fc2869bdeeeec5be886250f90954949e9fb179df6891f4a4f44e"
+  },
+  {
+   "path": "assets/clouds/cumulus-small.png",
+   "size": 631753,
+   "hash": "eee83a9907d6098729697c9410fb3d5ef39ba61a9baf9e7fb1d1498bf6ef30ee"
+  },
+  {
+   "path": "assets/clouds/storm.png",
+   "size": 671413,
+   "hash": "c9e10b5adc80ca8dc4c0252ee3ac71ab915906e76dc29a7d3ba6e55519e48ec4"
+  },
+  {
    "path": "assets/fish-tex.js",
    "size": 353756,
    "hash": "58238b40515f066b823e9e5aca85796e5f1cb443c92e5d97e532bc5f41c24445"
-  },
-  {
-   "path": "assets/fox-miko-crop.png",
-   "size": 641895,
-   "hash": "0c3e40bf0ae952320da5ca750a628b95aef79ac2c2f94be5aeeec1fb5b5f823d"
-  },
-  {
-   "path": "assets/fox-miko-crop.webp",
-   "size": 122604,
-   "hash": "0fbc481016dfcf187310895374578a752cfe440d62a2ed4bf37c99460852ba2c"
-  },
-  {
-   "path": "assets/fox-miko.png",
-   "size": 1112901,
-   "hash": "1383760553d4e2d72ae39fc27f01f2e2f5dc7b6acbd710d9f47c70135324956e"
   },
   {
    "path": "assets/fox-tex.js",
@@ -43,129 +48,14 @@
    "hash": "3bbba5de253798a1b029c3f31031d6a054c2c857096f4483c37fcd7ea03f70c1"
   },
   {
-   "path": "assets/garden-tex.js.bak",
-   "size": 1716445,
-   "hash": "7738ebc22dbdc5abe1eb5914b4918fe95ff86c03d93ea1cc6d3d55972214cc5e"
-  },
-  {
-   "path": "assets/garden-tex.js.bak2",
-   "size": 1699590,
-   "hash": "3e6385ddcf1954d840f448ef6d1a452fb69b7d2d3959519b5ce0fdff5fd7a7b5"
-  },
-  {
-   "path": "assets/pond-debug.png",
-   "size": 2484213,
-   "hash": "0fb10ccd27736acb4a92202ded80093cc473b3d84e2bc661f007a3c0e1d14827"
-  },
-  {
    "path": "assets/pond-poly.js",
    "size": 863,
    "hash": "e5ee45eb5ff96477b21d71451d377b1ef417b044a6950a57f8c17faa485fb162"
   },
   {
-   "path": "assets/一只圆滚滚的橘色小猫坐着回头看_正上方俯视角度_手绘水彩绘本_2026-11-13T01-48-23.png",
-   "size": 1186785,
-   "hash": "faa667ad0785fd09c271802701536c8832c13818396ee549c2ec1881f4fd988c"
-  },
-  {
-   "path": "assets/一只粉色蝴蝶展开翅膀_正上方俯视角度_手绘水彩绘本风格_翅膀_2026-11-13T01-48-07.png",
-   "size": 1121822,
-   "hash": "47a5e594f8beb0bc5d145f86d6b74fc8d0e750d2eea144ff7c9260666579a905"
-  },
-  {
-   "path": "assets/一条橙红色金鱼_正上方俯视角度_手绘水彩绘本风格_色彩鲜艳可_2026-11-13T01-47-49.png",
-   "size": 1217555,
-   "hash": "8c0eb23f91fed6cba94822394ef574b1e22f5734e1144385378ca3a13fef84b9"
-  },
-  {
-   "path": "assets/一条红白相间的锦鲤_正上方俯视角度_手绘水彩绘本风格_白色身_2026-11-13T01-47-58.png",
-   "size": 1572040,
-   "hash": "a277013c809a99de0038ffd09c21940cfa3a92dff60b515627e191242cd7d547"
-  },
-  {
-   "path": "assets/从正上方90度垂直向下俯拍的一条橙红色小金鱼_只看到鱼背_完_2026-11-13T07-20-44.png",
-   "size": 921630,
-   "hash": "d2a723135c2950bc60a6432a6a39384cb5ee3c7d5ebdd0871977fa09cdc772aa"
-  },
-  {
-   "path": "assets/从正上方垂直向下俯拍的一条橙红色小金鱼_完美俯视角度_鱼背朝_2026-11-13T07-19-43.png",
-   "size": 866628,
-   "hash": "1bda8e06388a52f49292f8ece6ab776feae08f6d6fd1076813f15624b733c53d"
-  },
-  {
-   "path": "assets/从正上方垂直向下俯拍的一条红白相间锦鲤_完美俯视角度_鱼背朝_2026-11-13T07-19-57.png",
-   "size": 886831,
-   "hash": "9e4b2e0920d4434cbe8ca03df7ee9f3fec6f28ad6b16e90ef8c13be0882f2738"
-  },
-  {
-   "path": "assets/半写实动画场景背景_高品质动画电影背景风格_保留真实透视与光_2026-11-13T02-23-15.png",
-   "size": 2465914,
-   "hash": "13c722b36a1d9e84af8e0a810c4d6db46e340010c28a5028ee1f7854c537e5ab"
-  },
-  {
-   "path": "assets/半写实动画风格_一条红白相间的锦鲤_从上方偏前视角俯视_白色_2026-11-13T02-42-55.png",
-   "size": 776249,
-   "hash": "6de3d8fdafb5e61f5ebc0cb9da4e963c85cd8a2ab73b3cb466edad36d5f58596"
-  },
-  {
-   "path": "assets/半写实动画风格_高品质动画电影背景风格_带轻微手绘笔触_色彩_2026-11-13T02-23-33.png",
-   "size": 1550002,
-   "hash": "f162ed61138723eabc6b1c9d7d81d2925519314a4607976aae5d8faec3ace6ad"
-  },
-  {
-   "path": "assets/半写实动画风格_高品质动画电影风格_带轻微手绘笔触__一条橙_2026-11-13T02-23-47.png",
-   "size": 1324770,
-   "hash": "f4365be28cc6d9f7fde4f903db6e12d3ea856e268ba9e2f77f00680fe8ef8ae8"
-  },
-  {
-   "path": "assets/半写实动画风格_高品质动画电影风格_带轻微手绘笔触__一条红_2026-11-13T02-24-03.png",
-   "size": 1646155,
-   "hash": "a41e071bfc54a1adac05da1d6577305dc5c7253840bf1e983b838ea7a098f1b6"
-  },
-  {
-   "path": "assets/半写实动画风格_高品质动画电影风格_带轻微手绘笔触_色彩干净_2026-11-13T02-24-58.png",
-   "size": 1608799,
-   "hash": "236b0c3b0a739312f332feb416004d99631ccdb4e7504d9ec57d925d6f2f877e"
-  },
-  {
-   "path": "assets/吉卜力风格手绘水彩插画_一片生机盎然的绿色草地花海_画面中央_2026-11-13T01-47-32.png",
-   "size": 2987218,
-   "hash": "5defbd1348224c8e0b73286937c0a49bd4bf31a6c62518644ca41e00497187f8"
-  },
-  {
-   "path": "assets/游戏素材图_正交俯视图_orthographic_top_d_2026-11-13T07-21-45.png",
-   "size": 521123,
-   "hash": "1c97b9cf91a3c86b2216584d5d2fb03f9dbead110d0286514c26bceef734a808"
-  },
-  {
-   "path": "assets/超写实摄影照片_无人机高空俯拍_约50度俯视_一座私家花园__2026-11-13T02-13-32.png",
-   "size": 3011362,
-   "hash": "b73990a77803838412390f18bb07974b00ba5ca133e6796cda882a95d05114c1"
-  },
-  {
-   "path": "assets/超写实摄影照片_无人机高空俯拍_约50度俯视_一座私家花园__2026-11-13T02-18-43.png",
-   "size": 3171513,
-   "hash": "79576d6eeda508d5b324c173276b600db8c4f1723b14ca4d43f577b02b35f131"
-  },
-  {
-   "path": "assets/超写实摄影风格_一只可爱的小狐狸穿着深绿色羊毛小马甲_像庄园_2026-11-13T02-13-59.png",
-   "size": 1479966,
-   "hash": "3d47cbd83d43290b391ee097b56463ef713f2b192bf6d6dea93204df4a64b236"
-  },
-  {
-   "path": "assets/超写实照片_一个嵌在草地上坡里的天然石洞洞口_圆拱形开口_洞_2026-11-13T02-13-43.png",
-   "size": 2091422,
-   "hash": "76a1abf0c8b012823709150d8871028a75837ccc38e7d4a830631765f8ad50f3"
-  },
-  {
-   "path": "assets/超写实照片风格_一条橙红色金鱼_从上方偏前视角_俯视微侧_拍_2026-11-13T02-06-23.png",
-   "size": 1356139,
-   "hash": "7d72aa053f76a64ed92779b10bcf286a1e40a429cb44c5c8753b87aefb23d7ab"
-  },
-  {
-   "path": "assets/超写实照片风格_一条红白相间的锦鲤_从上方偏前视角_俯视微侧_2026-11-13T02-06-33.png",
-   "size": 1444018,
-   "hash": "4394c71c540235f839314218251aee9e80b52722d1ecfade9f9046dcd6b67013"
+   "path": "assets/vendor/three.min.js",
+   "size": 603445,
+   "hash": "9274bbcec8d96168626c732b5d31c775aa8cfb7eaa0599bec0c175908a2c1ce2"
   },
   {
    "path": "config.json",
@@ -175,7 +65,7 @@
   {
    "path": "version.txt",
    "size": 1,
-   "hash": "7902699be42c8a8e46fbbb4501726517e86b22c56a189f7625a6da49081b2451"
+   "hash": "19581e27de7ced00ff1ce50b2047e7a567c76b1cbaebabe5ef03f7c3017bb5b7"
   }
  ]
 }

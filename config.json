@@ -1,0 +1,4 @@
+{
+  "updateBase": "https://mryi2026.github.io/eco-wallpaper",
+  "_说明": "静态更新源地址（如 GitHub Pages: https://你的用户名.github.io/eco-wallpaper）。打包时用 tools/pack_update.py -base <地址> 自动写入；发布前把这里的地址也发给用户。"
+}

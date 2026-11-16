@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<title>生态桌面 · EcoDesk v11</title>
+<title>生态桌面 · EcoDesk v14</title>
 <style>
   html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#9db86a;font-family:"Microsoft YaHei",system-ui,sans-serif;user-select:none;cursor:default}
   #bg,#sky,#mid,#gl,#c{position:absolute;inset:0;display:block}
@@ -334,7 +334,7 @@ let S=loadSave()||{v:5,coins:100,xp:0,lv:1,lastDaily:'',weather:'clear',wxTime:0
    正式发布前把 DEV_DEFAULT 改成 false 即可。
    实现要点：等级钉在 6（现有最高解锁级），金币每次刷新 UI 时补满，扣款判定永远不会失败；
    菜单上金币显示为 ∞，避免一长串数字。 */
-const DEV_DEFAULT=true;
+const DEV_DEFAULT=false;
 const DEV_KEY='ecoDeskDev';
 const DEV_COINS=99999999, DEV_MAXLV=6;
 const DEV=(()=>{try{

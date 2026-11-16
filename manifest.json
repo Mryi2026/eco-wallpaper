@@ -1,11 +1,11 @@
 {
- "version": "11",
- "builtAt": 1794811345292,
+ "version": "14",
+ "builtAt": 1794814890421,
  "files": [
   {
    "path": "index.html",
-   "size": 240629,
-   "hash": "8208e0842e2b319bb444a21f861b08e44884ba14143d4dc13fa223c8d0172f9b"
+   "size": 240630,
+   "hash": "e8c9bd0e7cb97214fc1b72e7a3ddb0779f55d89eb734f0b59b5d9efc11600e76"
   },
   {
    "path": "assets/cloud-sdk.js",
@@ -48,6 +48,26 @@
    "hash": "3bbba5de253798a1b029c3f31031d6a054c2c857096f4483c37fcd7ea03f70c1"
   },
   {
+   "path": "assets/keyed/cave.png",
+   "size": 1700644,
+   "hash": "c531a665d9619aa0e04ad26039b7a2e8624e74ad3db9d6014d3990ea88c6d3ef"
+  },
+  {
+   "path": "assets/keyed/fox.png",
+   "size": 1849798,
+   "hash": "7da1df91fea63be722b38db09c497b3591683258282290ac1608967e78036f9a"
+  },
+  {
+   "path": "assets/keyed/gold-top.png",
+   "size": 307909,
+   "hash": "f137d872bc6857aac005954d5cfe64712a6c7b01e97e34d16abdb1476a9fe9bf"
+  },
+  {
+   "path": "assets/keyed/koi-top.png",
+   "size": 403309,
+   "hash": "2dd68c5f1ebdaeb4fc37ea54be24f851c19efa73738bcb2f4af87583dde8f157"
+  },
+  {
    "path": "assets/pond-poly.js",
    "size": 863,
    "hash": "e5ee45eb5ff96477b21d71451d377b1ef417b044a6950a57f8c17faa485fb162"
@@ -58,6 +78,11 @@
    "hash": "9274bbcec8d96168626c732b5d31c775aa8cfb7eaa0599bec0c175908a2c1ce2"
   },
   {
+   "path": "assets/半写实动画场景背景_高品质动画电影背景风格_保留真实透视与光_2026-11-13T02-23-15.png",
+   "size": 2465914,
+   "hash": "13c722b36a1d9e84af8e0a810c4d6db46e340010c28a5028ee1f7854c537e5ab"
+  },
+  {
    "path": "config.json",
    "size": 286,
    "hash": "06075b593a06a164208ba3e50ec13524b270348026327596b19fe939e25e1962"
@@ -65,7 +90,7 @@
   {
    "path": "version.txt",
    "size": 2,
-   "hash": "4fc82b26aecb47d2868c4efbe3581732a3e7cbcc6c2efb32062c08170a05eeb8"
+   "hash": "8527a891e224136950ff32ca212b45bc93f69fbb801c3b1ebedac52775f99e61"
   }
  ]
 }

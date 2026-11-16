@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<title>生态桌面 · EcoDesk v16</title>
+<title>生态桌面 · EcoDesk v17</title>
 <style>
   html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#9db86a;font-family:"Microsoft YaHei",system-ui,sans-serif;user-select:none;cursor:default}
   #bg,#sky,#mid,#gl,#c{position:absolute;inset:0;display:block}
@@ -15,6 +15,21 @@
   .mbtn.info{width:58px;height:58px;justify-content:center;padding:0;border-radius:50%;background:rgba(255,252,242,.92);box-shadow:0 3px 12px rgba(60,40,10,.25);font-size:13px;font-weight:500;color:#7a5a20}
   #shop,#garden,#settings,#inv{position:absolute;top:50%;left:50%;transform:translate(-50%,-52%);width:440px;max-height:70vh;overflow-y:auto;background:rgba(255,251,240,.97);border-radius:18px;padding:18px 20px;color:#4a3a26;display:none;box-shadow:0 10px 50px rgba(40,30,10,.35);z-index:50}
   #settings{width:392px}
+  /* 商店：紧凑长圆方形（比洞窟稍大一点）+ 分类标签页，基本不用滚动 */
+  #shop{width:min(520px,58vw);max-height:62vh;border-radius:30px;padding:14px 16px 14px;display:none}
+  #shop.open{display:flex;flex-direction:column}
+  #shop h2{font-size:16px;margin-bottom:2px}
+  #shopItems{overflow-y:auto;min-height:0;flex:1}
+  .stab{display:flex;gap:6px;margin:2px 0 9px}
+  .stab button{flex:1;background:rgba(120,90,40,.08);border:1px solid rgba(120,90,40,.22);color:#5a4632;border-radius:12px;
+    padding:7px 4px;cursor:pointer;font-size:13px;font-family:inherit;transition:background .2s,color .2s}
+  .stab button:hover{background:rgba(120,90,40,.16)}
+  .stab button.on{background:#5f9a3f;border-color:#4d8033;color:#fff}
+  #shopItems{display:grid;grid-template-columns:1fr 1fr;gap:4px 9px}
+  #shopItems .cat{grid-column:1/-1;margin:5px 0 1px;font-size:12.5px}
+  #shopItems .item{margin:0;font-size:12.5px;padding:6px 9px;flex-wrap:wrap;gap:1px 4px;line-height:1.3}
+  #shopItems .item button{padding:4px 10px;font-size:11.5px}
+  #shopItems .item .ic{font-size:17px;margin-right:5px}
   #shop h2,#garden h2,#settings h2,#inv h2{margin:0 0 4px;font-size:17px;font-weight:500}
   #shop .sub,#garden .sub,#settings .sub,#inv .sub{font-size:12px;color:#9a8464;margin-bottom:10px}
   .cat{font-size:13px;color:#b06a1a;margin:12px 0 6px;font-weight:500}
@@ -56,6 +71,8 @@
   #pondFoods button{font-size:12px;padding:5px 8px}
   #pondFoods .row{flex-wrap:wrap;gap:5px}
   #toast{position:absolute;top:60px;left:50%;transform:translateX(-50%);background:rgba(70,55,30,.85);color:#ffe9b0;font-size:14px;border-radius:16px;padding:9px 22px;opacity:0;transition:opacity .5s;pointer-events:none;z-index:99}
+  #toolExit{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);display:none;background:rgba(70,55,30,.85);color:#ffe9b0;font-size:13px;border-radius:14px;padding:7px 18px;cursor:pointer;z-index:70;user-select:none;box-shadow:0 4px 14px rgba(30,20,8,.25)}
+  #toolExit:hover{background:rgba(70,55,30,.95)}
   /* 狐狸头顶气泡：跟随狐狸位置，小尖角指向它，可点击收起 */
   #foxBub{position:absolute;left:0;top:0;max-width:262px;background:#fffcf5;color:#4a3a26;
     border:1px solid rgba(120,95,60,.26);border-radius:14px;padding:9px 13px;font-size:13.5px;line-height:1.55;
@@ -90,6 +107,11 @@
 <div id="shop">
   <span id="close">✕</span>
   <h2>庄园商店</h2>
+  <div class="stab" id="shopTabs">
+    <button data-t="fish">🐟 养鱼</button>
+    <button data-t="plant">🌱 养花</button>
+    <button data-t="other">🧺 其他</button>
+  </div>
   <div class="sub" id="shopSub"></div>
   <div id="shopItems"></div>
 </div>
@@ -128,6 +150,7 @@
   <div class="hint" id="wxHint"></div>
   <div class="cat">狐狸管家</div>
   <div class="qrow" id="foxRow"></div>
+  <div class="qrow" id="foxAutoRow"></div>
   <div class="hint" id="foxHint"></div>
   <div class="cat">桌面图标适配</div>
   <div class="qrow" id="quietRow"></div>
@@ -150,6 +173,7 @@
   <div class="hint" id="rdHint">首次安装已自动注册本机账号，兑换记录会绑定这台电脑。</div>
 </div>
 <div id="toast"></div>
+<div id="toolExit">✕ 退出当前操作（右键 / Esc 也可以）</div>
 <div id="foxBub"><span id="foxBubT"></span><span class="fb-c" id="foxBubC" style="display:none">▍</span></div>
 <script src="assets/vendor/three.min.js"></script>
 <script src="assets/fox-tex.js"></script>
@@ -283,6 +307,7 @@ function migrateSave(o){
   if(!s.dex)s.dex={fish:{},flower:{}};
   /* v5.1 互动层字段：只补字段不升版本号，旧档照常读，不丢数据 */
   if(!s.foxQ)s.foxQ='quiet';                        /* 狐狸说话频率：quiet/normal/chatty */
+  if(s.foxAuto===undefined)s.foxAuto=1;             /* 管家自动出场：1=有话自己走出来 0=点了洞窟才出来 */
   if(!s.stats)s.stats={plant:0,water:0,harvest:0,dig:0,feed:0,coin:0};
   if(!s.seen)s.seen={};                             /* 首次行为标记（引导/里程碑） */
   if(s.snap===undefined)s.snap=null;                /* 离开时的花园快照（离线回归播报用） */
@@ -694,7 +719,24 @@ function buildFoxUI(){
   });
   const hint=document.getElementById('foxHint');
   if(hint)hint.innerHTML='管家会针对您正在做的事说一句，里程碑和离线回来必说。<br>'
-    +'安静档：日常操作偶尔一句、空闲不主动；正常档：每个动作都应一声；话痨档：空闲也会找话聊。';
+    +'安静档：日常操作偶尔一句、空闲不主动；正常档：每个动作都应一声；话痨档：空闲也会找话聊。<br>'
+    +'「自动出场」关掉后，管家不会自己从洞里走出来，只有您点洞窟时才出来。';
+  /* 自动出场开关：关掉后管家不主动出洞，消息会攒着，点洞窟出来时再补播 */
+  const arow=document.getElementById('foxAutoRow');
+  if(arow){
+    arow.innerHTML='';
+    [['1','自动出场','有话想说就自己走出来'],['0','安静蹲洞','只在我点它的时候出来']].forEach(([k,lb,sb])=>{
+      const b=document.createElement('button');
+      b.innerHTML=lb+'<small>'+sb+'</small>';
+      b.style.whiteSpace='nowrap';
+      if(String(S.foxAuto===undefined?1:S.foxAuto)===k)b.classList.add('on');
+      b.onclick=()=>{
+        S.foxAuto=+k;saveGame();buildFoxUI();
+        toast(k==='1'?'管家会自己出来溜达了 🦊':'管家改安静蹲洞，点洞窟它才出来 🦊');
+      };
+      arow.appendChild(b);
+    });
+  }
 }
 /* 桌面图标适配：左侧静区宽度档位；配合 icon-autohide 小工具实现"鼠标进入弹出、移开折叠" */
 const QUIET_OPTS=[['off','关闭','无静区'],['c2','2 列','约 11%'],['c3','3 列','约 15%'],['c4','4 列','约 20%']];
@@ -1453,11 +1495,15 @@ const ICONS={
   task:'<svg viewBox="0 0 28 28"><rect x="6.5" y="4.5" width="15" height="19" rx="2" fill="#fff6e0" stroke="#5d4a33" stroke-width="1.8"/><rect x="10.5" y="2.6" width="7" height="3.6" rx="1.2" fill="#e2a24b" stroke="#5d4a33" stroke-width="1.3"/><path d="M9.5 11l1.6 1.6 2.8-3" fill="none" stroke="#8fae62" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><path d="M9.5 16.5l1.6 1.6 2.8-3" fill="none" stroke="#8fae62" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><path d="M14.8 11.3h3.4M14.8 16.8h3.4" stroke="#5d4a33" stroke-width="1.5" stroke-linecap="round"/></svg>',
   gear:'<svg viewBox="0 0 28 28"><circle cx="14" cy="14" r="6.2" fill="none" stroke="#5d4a33" stroke-width="1.9"/><path d="M14 4.6v3.4M14 20v3.4M4.6 14H8M20 14h3.4M7.2 7.2l2.4 2.4M18.4 18.4l2.4 2.4M20.8 7.2l-2.4 2.4M9.6 18.4l-2.4 2.4" stroke="#5d4a33" stroke-width="2.4" stroke-linecap="round"/><circle cx="14" cy="14" r="2.2" fill="#e2a24b"/></svg>'
 };
-/* 面板互斥：同一时间只开一个弹层（商店/仓库/花圃/设置） */
+/* 面板互斥：同一时间只开一个弹层（商店/仓库/花圃/设置）；商店是 flex 布局的长圆面板 */
 function showPanelOnly(id){
   ['shop','inv','garden','settings'].forEach(q=>{
     const el=document.getElementById(q);
-    if(el)el.style.display=(q===id?'block':'none')});
+    if(!el)return;
+    const on=q===id;
+    el.style.display=on?(q==='shop'?'flex':'block'):'none';
+    if(q==='shop')el.classList.toggle('open',on);
+  });
 }
 const MENU_ITEMS=[
   {icon:'shop',label:'商店',act:()=>openShop()},
@@ -1514,11 +1560,25 @@ function dailySign(){const today=new Date().toDateString();
   if(S.lastDaily===today){toast('今天已经签到啦');return}
   S.lastDaily=today;addCoins(100);addXp(30);saveGame();toast('签到成功！+100 金币 +30 经验')}
 
-/* ================= 商店 ================= */
-function openShop(){
-  const s=document.getElementById('shop');
-  document.getElementById('shopSub').textContent='喂鱼和签到得经验升级 · 点金色泡泡收金币';
+/* ================= 商店（紧凑分页：养鱼 / 养花 / 其他） ================= */
+let shopTab='fish';
+const SHOP_TABS={
+  fish :'喂鱼和签到得经验升级 · 点金色泡泡收金币',
+  plant:'买种子、肥料和洒水壶，把花园打理起来',
+  other:'花圃、仓库和更多内容'
+};
+function openShop(tab){
+  if(tab)shopTab=tab;
+  document.querySelectorAll('#shopTabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===shopTab));
+  document.getElementById('shopSub').textContent=SHOP_TABS[shopTab]||SHOP_TABS.fish;
   const box=document.getElementById('shopItems');box.innerHTML='';
+  if(shopTab==='fish')shopFishPage(box);
+  else if(shopTab==='plant')shopPlantPage(box);
+  else shopOtherPage(box);
+  showPanelOnly('shop');
+  document.getElementById('shop').classList.add('open');
+}
+function shopFishPage(box){
   const c=document.createElement('div');c.className='cat';c.textContent='🐟 池塘伙伴';box.appendChild(c);
   Object.entries(FISHES).forEach(([k,v])=>{
     const lock=S.lv<v.lv;const d=document.createElement('div');d.className='item'+(lock?' locked':'');
@@ -1532,29 +1592,7 @@ function openShop(){
       addXp(8);saveGame();updateMenu();toast(v.name+'幼鱼住进了池塘，会慢慢长大 🐟');
       EVT.emit('buyFish',{k})};
     box.appendChild(d);});
-  const cS=document.createElement('div');cS.className='cat';cS.textContent='🌸 花园种子';box.appendChild(cS);
-  Object.entries(FLOWER_LIB).forEach(([k,v])=>{
-    const lock=S.lv<v.lv;
-    const d=document.createElement('div');d.className='item'+(lock?' locked':'');
-    d.innerHTML=`<span><span class="ic">${v.icon}</span>${v.name}种子 <span style="color:#9a8464;font-size:11px">Lv.${v.lv}${lock?' 未解锁':''} · 成熟${v.growH}h</span></span>
-      <span><span class="cost">${v.cost}💰</span> <button ${lock?'disabled':''}>买种子</button></span>`;
-    d.querySelector('button').onclick=()=>{
-      if(S.coins<v.cost){toast('金币不够，点池塘里的金色泡泡赚钱吧');return}
-      S.coins-=v.cost;invAdd(seedId(k));saveGame();updateMenu();
-      toast('买了 '+v.name+'种子，点左侧草地的土圃种下吧 🌱');openShop()};
-    box.appendChild(d);});
-  const cT=document.createElement('div');cT.className='cat';cT.textContent='🧰 花园工具';box.appendChild(cT);
-  const canOwn=S.tools&&S.tools.can;
-  const dCan=document.createElement('div');dCan.className='item'+(canOwn?' locked':'');
-  dCan.innerHTML=`<span><img src="${(window.GARDEN_TEX&&GARDEN_TEX.items&&GARDEN_TEX.items.can)||''}" onerror="this.style.display='none'" style="width:30px;height:30px;object-fit:contain;vertical-align:-9px;margin-right:6px">洒水壶</span>
-    <span>${canOwn?'<span style="color:#4d8033;font-size:12px">已拥有</span>':'<span class="cost">120💰</span> <button>购买</button>'}</span>`;
-  if(!canOwn)dCan.querySelector('button').onclick=()=>{
-    if(S.coins<120){toast('金币不够');return}
-    S.coins-=120;S.tools=Object.assign(S.tools||{},{can:1});saveGame();updateMenu();
-    toast('买到洒水壶啦！给花浇水防止枯萎 🚿');openShop()};
-  box.appendChild(dCan);
-  /* —— 鱼粮 4 档（初级/中级/高级/仙人）：越高档越顶饱、经验越多、附带成长进度，高级与仙人有异色概率 —— */
-  const cFood=document.createElement('div');cFood.className='cat';cFood.textContent='🐟 鱼粮（长按水池喂食）';box.appendChild(cFood);
+  const cFood=document.createElement('div');cFood.className='cat';cFood.textContent='🍚 鱼粮（长按水池喂食）';box.appendChild(cFood);
   Object.values(FOOD_LIB).forEach(F=>{
     const key='food'+F.lv,own=invCount(key),cur=foodLv()===F.lv;
     const extra=(F.varP?' · 异色 '+(F.varP*100).toFixed(F.varP<0.01?1:0)+'%':'')+(F.guard?' · 仙力'+F.guard+'h':'');
@@ -1572,7 +1610,19 @@ function openShop(){
       toast('撒鱼粮改用：'+F.name);openShop()};
     box.appendChild(d);
   });
-  /* —— 肥料 4 档（初级/中级/高级/仙人）：单次推进的生长比例，高级与仙人有异色花概率 —— */
+}
+function shopPlantPage(box){
+  const cS=document.createElement('div');cS.className='cat';cS.textContent='🌸 花园种子';box.appendChild(cS);
+  Object.entries(FLOWER_LIB).forEach(([k,v])=>{
+    const lock=S.lv<v.lv;
+    const d=document.createElement('div');d.className='item'+(lock?' locked':'');
+    d.innerHTML=`<span><span class="ic">${v.icon}</span>${v.name}种子 <span style="color:#9a8464;font-size:11px">Lv.${v.lv}${lock?' 未解锁':''} · 成熟${v.growH}h</span></span>
+      <span><span class="cost">${v.cost}💰</span> <button ${lock?'disabled':''}>买种子</button></span>`;
+    d.querySelector('button').onclick=()=>{
+      if(S.coins<v.cost){toast('金币不够，点池塘里的金色泡泡赚钱吧');return}
+      S.coins-=v.cost;invAdd(seedId(k));saveGame();updateMenu();
+      toast('买了 '+v.name+'种子，长按草地的土圃种下吧 🌱');openShop()};
+    box.appendChild(d);});
   const cFert=document.createElement('div');cFert.className='cat';cFert.textContent='🧫 肥料（点花施肥）';box.appendChild(cFert);
   Object.values(FERT_LIB).forEach(F=>{
     const key='fert'+F.lv,own=invCount(key),cur=fertLv()===F.lv;
@@ -1590,17 +1640,38 @@ function openShop(){
       toast('施肥改用：'+F.name);openShop()};
     box.appendChild(d);
   });
+  const cT=document.createElement('div');cT.className='cat';cT.textContent='🧰 工具';box.appendChild(cT);
+  const canOwn=S.tools&&S.tools.can;
+  const dCan=document.createElement('div');dCan.className='item'+(canOwn?' locked':'');
+  dCan.innerHTML=`<span><img src="${(window.GARDEN_TEX&&GARDEN_TEX.items&&GARDEN_TEX.items.can)||''}" onerror="this.style.display='none'" style="width:26px;height:26px;object-fit:contain;vertical-align:-8px;margin-right:6px">洒水壶</span>
+    <span>${canOwn?'<span style="color:#4d8033;font-size:12px">已拥有 · 长按草地 2.5 秒自动浇水</span>':'<span class="cost">120💰</span> <button>购买</button>'}</span>`;
+  if(!canOwn)dCan.querySelector('button').onclick=()=>{
+    if(S.coins<120){toast('金币不够');return}
+    S.coins-=120;S.tools=Object.assign(S.tools||{},{can:1});saveGame();updateMenu();
+    toast('买到洒水壶啦！长按草地 2.5 秒自动浇水 🚿');openShop()};
+  box.appendChild(dCan);
+}
+function shopOtherPage(box){
   const c2=document.createElement('div');c2.className='cat';c2.textContent='🌱 更多内容';box.appendChild(c2);
   const dG=document.createElement('div');dG.className='item';
   dG.innerHTML=`<span><span class="ic">🌻</span>花圃 · 自己种花</span><span style="color:#9a8464;font-size:12px">打开面板</span>`;
   dG.onclick=()=>{document.getElementById('shop').style.display='none';openGarden()};
   box.appendChild(dG);
+  const dI=document.createElement('div');dI.className='item';
+  dI.innerHTML=`<span><span class="ic">📦</span>仓库 · 背包清点</span><span style="color:#9a8464;font-size:12px">打开面板</span>`;
+  dI.onclick=()=>{document.getElementById('shop').style.display='none';openInv()};
+  box.appendChild(dI);
   const dB=document.createElement('div');dB.className='item locked';
   dB.innerHTML=`<span><span class="ic">🦋</span>花园伙伴</span><span style="color:#9a8464;font-size:12px">即将开放</span>`;
   box.appendChild(dB);
-  showPanelOnly('shop');
+  const dH=document.createElement('div');dH.className='item locked';
+  dH.innerHTML=`<span><span class="ic">🎨</span>更多皮肤</span><span style="color:#9a8464;font-size:12px">设置里可换</span>`;
+  dH.onclick=()=>{document.getElementById('shop').style.display='none';openSettings()};
+  box.appendChild(dH);
 }
-document.getElementById('close').onclick=()=>{document.getElementById('shop').style.display='none'};
+document.querySelectorAll('#shopTabs button').forEach(b=>{
+  b.onclick=()=>openShop(b.dataset.t)});
+document.getElementById('close').onclick=()=>{const s=document.getElementById('shop');s.style.display='none';s.classList.remove('open')};
 
 /* ================= 仓库（背包：种子 / 鱼粮 / 肥料 / 工具） ================= */
 function openInv(){
@@ -2051,7 +2122,7 @@ function drawSeed(sc){
 }
 function drawGarden(now){
   const rn=Date.now(),pls=S.flowers.plants;
-  if(!pls.length&&!GTOOL&&!WETS.length)return;
+  if(!pls.length&&!GTOOL&&!WETS.length&&!AUTOCAN.length)return;
   const visB=(H-OY)/VS;
   drawWets();                                        /* 湿痕垫底，花压在上面 */
   const order=pls.slice().sort((a,b)=>a.fy-b.fy);    /* 远处先画，近处压上 */
@@ -2076,6 +2147,13 @@ function drawGarden(now){
     ctx.restore();
   }
   drawGtoolCursor(now);
+  /* 长按草地触发的自动浇水：洒水壶出现、倒水 1.5s 后淡出 */
+  for(let i=AUTOCAN.length-1;i>=0;i--){
+    const a=AUTOCAN[i],age=Date.now()-a.t0;
+    if(age>1500){AUTOCAN.splice(i,1);continue}
+    const al=age>1150?Math.max(0,(1500-age)/350):1;
+    drawCanCursor(a.x,a.y,now,true,al);
+  }
 }
 /* 点到哪株花（从近到远找，返回 plant 或 null）
    只认“花的上半身”：点花头/叶片算摸花（晃动），点根部附近仍算草地（弹工具条），
@@ -2115,8 +2193,12 @@ function drawWets(){
 
 /* 工具模式光标：播种显示半透明成花预览，浇水显示洒水壶，其余显示作用范围；不可种处给禁种标记 */
 /* 洒水壶光标：以「壶嘴」为笔尖对准鼠标点，壶身就贴在光标左上，倒水时壶身前倾嘴朝下 */
-function drawCanCursor(bx,by,now){
-  const pour=!!gPaint;
+function drawCanCursor(bx,by,now,pourArg,alpha){
+  const pour=pourArg===undefined?!!gPaint:!!pourArg;
+  const al=alpha===undefined?1:alpha;               /* 自动浇水淡出用 */
+  if(al<=0)return;
+  ctx.save();
+  ctx.globalAlpha=al;                               /* 整段（水流/壶/标记）统一淡出 */
   const ar=CAN_IMG&&CAN_IMG.naturalWidth?CAN_IMG.naturalWidth/CAN_IMG.naturalHeight:0.98;
   const h=BW*0.052,w=h*ar;
   const tilt=pour?0.80:0.44;                       /* 倒水时壶嘴朝下压 */
@@ -2149,7 +2231,7 @@ function drawCanCursor(bx,by,now){
   if(CAN_IMG&&CAN_IMG.complete&&CAN_IMG.naturalWidth){
     ctx.save();
     ctx.translate(cx,cy);ctx.rotate(tilt);
-    ctx.globalAlpha=0.97;
+    ctx.globalAlpha=0.97*al;
     ctx.drawImage(CAN_IMG,-w*0.5,-h*0.5,w,h);
     ctx.restore();
   }else{                                             /* 贴图没就绪的兜底：emoji */
@@ -2163,6 +2245,7 @@ function drawCanCursor(bx,by,now){
   ctx.beginPath();ctx.moveTo(bx-BW*0.006,by);ctx.lineTo(bx+BW*0.006,by);
   ctx.moveTo(bx,by-BW*0.004);ctx.lineTo(bx,by+BW*0.004);ctx.stroke();
   ctx.restore();
+  ctx.restore();                                     /* 对应函数入口的 save（统一淡出） */
 }
 function drawGtoolCursor(now){
   cv.style.cursor=GTOOL&&gMouse?'none':'';           /* 工具模式下隐藏系统箭头，画布光标代替 */
@@ -2428,6 +2511,7 @@ function _sayNow(text,opt,pri){
   const st=FOXSAY,now=Date.now();
   if(foxState!=='out'){                          /* 狐狸在洞里 → 先跑出来，站定再说 */
     st.pending={text,opt,pri,at:now};
+    if(S.foxAuto===0)return;                     /* 安静蹲洞模式：不自动出来，点了洞窟再补播 */
     if(foxState==='hidden'||foxState==='walkback')toggleFox();
     return;
   }
@@ -2778,7 +2862,6 @@ function renderFox3D(now,dt){
 
 /* ================= 互动 ================= */
 let ready=false,food=[],bubbles=[],ripples=[],windR=[],wakes=[];
-let pondDown=null,pondLong=false;                  /* 长按水池检测 / 抑制长按后的那次撒粮 */
 cv.addEventListener('dblclick',e=>{
   if(!ready)return;
   const cs=caveScr();
@@ -2805,8 +2888,7 @@ cv.addEventListener('click',e=>{
   if(fpl){flowerSway(fpl);
     if(plantStage(fpl,Date.now())===3&&Math.random()<0.65)petalSpawn(fpl,Date.now());
     return}
-  /* 草地（水池外）任意处 → 原地弹工具条；同一点再点会重开到新位置 */
-  if(inSoilBG(bx,by)){openGtoolBar(e.clientX,e.clientY);return}
+  /* 草地单击不再弹工具条（改成长按 1 秒弹出）；单击只保留上面的摸花互动 */
   if(foxState==='out'){const fs=foxSeatScr();
     if(Math.hypot(e.clientX-fs.x,e.clientY-fs.y)<seatHitR()){
       if(Date.now()-foxCool>15000){foxCool=Date.now();addXp(2);EVT.emit('poke',{})}
@@ -2828,18 +2910,52 @@ cv.addEventListener('click',e=>{
       return}
     feedAt(bx,by,false);return}
 });
-/* —— 长按水池：弹出池塘工具条（喂食 / 切换鱼粮档位） —— */
+/* —— 长按交互（草地/水池通用）：
+   按住 1.0s → 在按住位置弹出功能栏（水池=喂食栏 / 草地=种植工具条）
+   按住 2.5s → 快捷动作：水池自动撒一份鱼食 / 草地自动出现洒水壶浇一次
+   中途移动超过 18px 取消；抬起后的一次 click 用 pondLong 抑制，不会误触发喂食 —— */
+let pondLong=false;                    /* 长按已触发：抑制抬起后的那次 click */
+let press=null,pressT1=0,pressT2=0;
+function pressCancel(){clearTimeout(pressT1);clearTimeout(pressT2);press=null}
 cv.addEventListener('pointerdown',e=>{
   if(!ready||GTOOL)return;
   if(e.button!==undefined&&e.button!==0)return;
   const {bx,by}=toBg(e.clientX,e.clientY);
-  if(inPondBg(bx,by))pondDown={t:Date.now(),x:e.clientX,y:e.clientY};
+  const zone=inPondBg(bx,by)?'pond':inSoilBG(bx,by)?'grass':null;
+  if(!zone)return;
+  pressCancel();
+  press={x:e.clientX,y:e.clientY,bx,by,zone};
+  pressT1=setTimeout(()=>{
+    if(!press)return;
+    pondLong=true;                                /* 弹过栏：这次抬起不算单击 */
+    if(press.zone==='pond')openPondBar(press.x,press.y);
+    else openGtoolBar(press.x,press.y);
+  },1000);
+  pressT2=setTimeout(()=>{
+    if(!press)return;
+    pondLong=true;
+    hidePondBar();hideGtoolBar();                 /* 2.5s 快捷动作：收掉 1s 弹出的栏 */
+    if(press.zone==='pond'){
+      const FD=foodCur(),key='food'+FD.lv;
+      if(!invCount(key)){toast('没有'+FD.name+'了，去商店买 🍚');return}
+      if(feedAt(press.bx,press.by,false))toast('自动撒了一把'+FD.name+' 🍚');
+    }else quickWater(press.bx,press.by);
+  },2500);
 });
-cv.addEventListener('pointerup',e=>{
-  if(!pondDown)return;
-  const dt=Date.now()-pondDown.t,mv=Math.hypot(e.clientX-pondDown.x,e.clientY-pondDown.y);
-  if(dt>340&&mv<14){openPondBar(e.clientX,e.clientY);pondLong=true}
-  pondDown=null;
+/* 长按草地 2.5s：洒水壶自动出现、就地浇一次（不用先在工具条里选浇水） */
+let AUTOCAN=[];                                      /* 一次性浇水动画 {x,y,t0} */
+function quickWater(bx,by){
+  if(!(S.tools&&S.tools.can)){toast('还没有洒水壶，商店里有售 🚿');return}
+  const keep=GTOOL;GTOOL={act:'water'};
+  gApplyAt(bx,by,true);addWet(bx,by);
+  GTOOL=keep;
+  AUTOCAN.push({x:bx,y:by,t0:Date.now()});
+  if(AUTOCAN.length>4)AUTOCAN.shift();
+  toast('自动浇了一次水 🚿');
+}
+window.addEventListener('pointerup',()=>{
+  gPaint=false;
+  if(press)pressCancel();                            /* 松手：未到时的长按作废 */
 });
 /* —— 工具模式：按下=确认执行一次，按住移动=连续执行（播种/浇水/施肥/收获/拔除共用） —— */
 cv.addEventListener('pointerdown',e=>{
@@ -2851,24 +2967,39 @@ cv.addEventListener('pointerdown',e=>{
 });
 window.addEventListener('pointermove',e=>{
   if(!ready)return;
+  if(press&&Math.hypot(e.clientX-press.x,e.clientY-press.y)>18)pressCancel();  /* 按住拖动：取消长按 */
   const {bx,by}=toBg(e.clientX,e.clientY);
   gMouse={bx,by};
   if(GTOOL&&gPaint){FOXSAY.busy=Date.now()+1500;gToolMove(bx,by)}
 });
-window.addEventListener('pointerup',()=>{gPaint=false});
 /* —— 右键 = 取消当前一切操作：工具模式、工具条、商店/仓库/花圃/设置全部收起 —— */
 function uiPopupOpen(){
-  const open=q=>{const el=document.getElementById(q);return !!el&&el.style.display==='block'};
+  const open=q=>{const el=document.getElementById(q);return !!el&&(el.style.display==='block'||el.style.display==='flex')};
   return !!(GTOOL||open('gtoolBar')||open('pondBar')||open('shop')||open('inv')||open('garden')||open('settings'));
 }
 function uiCancelAll(){
   GTOOL=null;hideGtoolBar();hidePondBar();
   ['shop','inv','garden','settings'].forEach(q=>{
-    const el=document.getElementById(q);if(el)el.style.display='none'});
+    const el=document.getElementById(q);if(el){el.style.display='none';if(q==='shop')el.classList.remove('open')}});
 }
 addEventListener('contextmenu',e=>{
   if(uiPopupOpen()){e.preventDefault();uiCancelAll()}
 });
+/* 独立版宿主转发右键的桥：穿透层注入的鼠标事件偶尔不产生 contextmenu，
+   宿主在右键抬起时直接调这个函数，等价于页面上右键（取消一切操作） */
+window.__ecoCtxMenu=function(x,y){
+  try{
+    if(!uiPopupOpen())return;
+    const ev=new MouseEvent('contextmenu',{clientX:x,clientY:y,bubbles:true,cancelable:true});
+    window.dispatchEvent(ev);
+  }catch(e){}
+};
+/* 退出按钮：工具模式期间常驻底部，单击即退出（右键/Esc 也可以） */
+const toolExitEl=document.getElementById('toolExit');
+if(toolExitEl){
+  toolExitEl.onclick=()=>uiCancelAll();
+  setInterval(()=>{toolExitEl.style.display=GTOOL?'block':'none'},400);
+}
 window.addEventListener('keydown',e=>{
   if(e.key==='Escape'&&GTOOL){GTOOL=null;hideGtoolBar()}
 });
@@ -3695,13 +3826,76 @@ function caveHoleCanvas(img,p,f){
   caveHoleCv=c;caveHoleKey=key;
   return c;
 }
+/* 洞窟融合层（缓存）：贴图边缘太“贴纸感”，在四周程序化补一圈融合带再画本体 ——
+   ① 苔绿剪影模糊晕：贴图硬边落在同色系过渡带上，不再是生硬的抠图边
+   ② 底部落地阴影：把洞窟“压”进草地，有重量感
+   ③ 轮廓四周补草叶/小石子：打破规则剪影，和场景草地一个画风
+   ④ 最后画挖好软洞的本体（洞内/洞前透出 3D 狐狸层） */
+let caveBlendCv=null,caveBlendKey='';
+function caveBlendCanvas(img,p,f){
+  const key=Math.round(p.w)+'x'+Math.round(p.h)+'|'+(SKIN.cave&&SKIN.cave.img||'')+'|'+(f||'');
+  if(caveBlendCv&&caveBlendKey===key)return caveBlendCv;
+  const pad=Math.round(p.w*0.16);
+  const W2=Math.round(p.w)+pad*2,H2=Math.round(p.h)+pad*2;
+  const c=document.createElement('canvas');c.width=W2;c.height=H2;
+  const g=c.getContext('2d');
+  const ox=pad,oy=pad;
+  /* ① 剪影软晕：两层不同模糊半径，过渡有层次 */
+  const sil=document.createElement('canvas');sil.width=W2;sil.height=H2;
+  const sg=sil.getContext('2d');
+  sg.drawImage(img,ox,oy,Math.round(p.w),Math.round(p.h));
+  sg.globalCompositeOperation='source-in';
+  sg.fillStyle='#57603a';sg.fillRect(0,0,W2,H2);
+  const bl=Math.max(4,Math.round(p.w*0.024));
+  g.save();g.globalAlpha=0.50;g.filter='blur('+bl+'px)';
+  g.drawImage(sil,-4,-4,W2+8,H2+8);g.restore();
+  g.save();g.globalAlpha=0.26;g.filter='blur('+Math.max(2,Math.round(bl*0.4))+'px)';
+  g.drawImage(sil,-1,-1,W2+2,H2+2);g.restore();
+  /* ② 落地阴影 */
+  g.save();g.globalAlpha=0.38;g.filter='blur('+Math.max(5,Math.round(p.w*0.035))+'px)';
+  g.fillStyle='#2c3620';
+  g.beginPath();g.ellipse(ox+p.w*0.5,oy+p.h*0.93,p.w*0.46,p.h*0.10,0,0,7);g.fill();g.restore();
+  /* ③ 轮廓补草叶 + 碎石（确定性伪随机，重绘一致） */
+  let sd=20260516;const rnd=()=>{sd=(sd*9301+49297)%233280;return sd/233280};
+  const cx=ox+p.w*0.5,cy=oy+p.h*0.5,rx=p.w*0.505,ry=p.h*0.47;
+  g.lineCap='round';
+  for(let i=0;i<56;i++){
+    const a=(i/56)*Math.PI*2+rnd()*0.08;
+    if(Math.sin(a)<-0.32)continue;               /* 顶部剪影自带草，不补 */
+    const px=cx+Math.cos(a)*rx,py=cy+Math.sin(a)*ry;
+    const low=Math.max(0,Math.sin(a));           /* 越靠下草越长，像从地里长出来 */
+    const len=p.w*(0.018+rnd()*0.030)*(0.7+0.7*low);
+    const sway=(rnd()-0.5)*p.w*0.02;
+    const gr=88+rnd()*34|0,gg=108+rnd()*30|0;
+    g.strokeStyle='rgba('+gr+','+gg+',52,'+(0.30+rnd()*0.30).toFixed(2)+')';
+    g.lineWidth=1.1+rnd()*0.8;
+    g.beginPath();g.moveTo(px,py);
+    g.quadraticCurveTo(px+(rnd()-0.5)*p.w*0.012,py-len*0.6,px+sway,py-len);
+    g.stroke();
+  }
+  for(let i=0;i<7;i++){
+    const a=0.5+rnd()*2.1;
+    const px=cx+Math.cos(a)*rx*(1.0+rnd()*0.06),py=cy+Math.sin(a)*ry*(1.0+rnd()*0.10);
+    const rr=p.w*(0.006+rnd()*0.010);
+    g.fillStyle='rgba(140,140,126,'+(0.30+rnd()*0.20).toFixed(2)+')';
+    g.beginPath();g.ellipse(px,py,rr,rr*0.7,rnd()*3,0,7);g.fill();
+    g.fillStyle='rgba(226,226,210,'+(0.18+rnd()*0.14).toFixed(2)+')';
+    g.beginPath();g.ellipse(px-rr*0.2,py-rr*0.3,rr*0.6,rr*0.35,rnd()*3,0,7);g.fill();
+  }
+  g.lineCap='butt';
+  /* ④ 本体 */
+  const holed=caveHoleCanvas(img,p,f);
+  g.drawImage(holed,ox,oy,Math.round(p.w),Math.round(p.h));
+  caveBlendCv=c;caveBlendKey=key;
+  return c;
+}
 function drawCave(now){
   const img=sprites.cave;if(!img)return;
-  const p=cavePos(),m=caveMouth();
+  const p=cavePos();
   const cs=SKIN.cave,f=(cs&&cs.filter&&cs.filter!=='none')?cs.filter:null;
-  /* 挖好软洞的贴图整张画上去：洞内与洞前土地透出 3D 狐狸层（#gl） */
-  const holed=caveHoleCanvas(img,p,f);
-  ctx.drawImage(holed,p.x-p.w/2,p.y-p.h/2,p.w,p.h);
+  const bl=caveBlendCanvas(img,p,f);
+  const pad=Math.round(p.w*0.16);
+  ctx.drawImage(bl,p.x-p.w/2-pad,p.y-p.h/2-pad,bl.width,bl.height);
 }
 function drawBubbles(dt){
   const p=pondPx();

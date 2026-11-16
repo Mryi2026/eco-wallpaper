@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>生态桌面 · 管理员后台</title>
+<style>
+  :root{
+    --sky1:#cfe8f7; --sky2:#eaf6ec; --card:rgba(255,255,255,.88);
+    --ink:#22313a; --sub:#5d7383; --line:rgba(34,49,58,.12);
+    --acc:#3f8f6b; --acc2:#2f7a5a; --warn:#c25b4a; --gold:#b8892f;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;min-height:100%}
+  body{
+    font:14px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    color:var(--ink);
+    background:linear-gradient(160deg,var(--sky1) 0%,var(--sky2) 58%,#f4f9f0 100%);
+    background-attachment:fixed;
+    padding:20px 16px 60px;
+  }
+  .wrap{max-width:1080px;margin:0 auto}
+  header{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 16px}
+  header h1{font-size:19px;margin:0;letter-spacing:.3px}
+  .tag{font-size:11px;padding:2px 9px;border-radius:99px;background:rgba(63,143,107,.14);color:var(--acc2);white-space:nowrap}
+  .spacer{flex:1}
+  .card{
+    background:var(--card);border:1px solid var(--line);border-radius:16px;
+    padding:16px 18px;margin-bottom:14px;
+    box-shadow:0 8px 26px rgba(40,70,60,.07);backdrop-filter:blur(8px);
+  }
+  h2{font-size:15px;margin:0 0 12px;display:flex;align-items:center;gap:8px}
+  h2 .mini{margin-left:auto;font-weight:400}
+  .mini{font-size:12px;color:var(--sub)}
+  .hint{font-size:12px;color:var(--sub);margin:8px 0 0}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-bottom:12px}
+  label.field{display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--sub)}
+  input,select,button,textarea{font:inherit;color:var(--ink)}
+  input[type=text],input[type=password],input[type=number],select,textarea{
+    width:100%;padding:9px 11px;border-radius:11px;border:1px solid var(--line);
+    background:rgba(255,255,255,.9);outline:none;transition:.15s;
+  }
+  input:focus,select:focus,textarea:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(63,143,107,.13)}
+  button{cursor:pointer;border:none;border-radius:11px;padding:9px 16px;transition:.15s;white-space:nowrap}
+  button.primary{background:var(--acc);color:#fff;font-weight:600}
+  button.primary:hover{background:var(--acc2)}
+  button.primary:disabled{opacity:.55;cursor:default}
+  button.ghost{background:rgba(34,49,58,.06);color:var(--ink)}
+  button.ghost:hover{background:rgba(34,49,58,.11)}
+  button.danger{background:rgba(194,91,74,.12);color:var(--warn);padding:5px 10px;font-size:12px}
+  button.danger:hover{background:rgba(194,91,74,.22)}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;padding:14px 16px}
+  .stat{text-align:center}
+  .stat b{display:block;font-size:22px;line-height:1.25;color:var(--acc2);font-variant-numeric:tabular-nums}
+  .stat span{font-size:11px;color:var(--sub)}
+  .tablewrap{overflow:auto;max-height:420px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.6)}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{padding:8px 10px;text-align:left;border-bottom:1px solid rgba(34,49,58,.07);white-space:nowrap}
+  th{position:sticky;top:0;background:#f2f8f4;font-weight:600;font-size:12px;color:var(--sub);z-index:1}
+  tbody tr:hover{background:rgba(63,143,107,.05)}
+  td.code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.4px;color:#1f4d3a;font-weight:600}
+  .pill{display:inline-block;font-size:11px;padding:1px 8px;border-radius:99px;background:rgba(34,49,58,.07);color:var(--sub)}
+  .pill.ok{background:rgba(63,143,107,.15);color:var(--acc2)}
+  .pill.off{background:rgba(194,91,74,.13);color:var(--warn)}
+  .empty{padding:26px 10px;text-align:center;color:var(--sub);font-size:13px}
+  #genOut{margin-top:12px;padding:12px 14px;border:1px dashed rgba(63,143,107,.45);border-radius:12px;background:rgba(63,143,107,.06)}
+  #genOut pre{margin:8px 0;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:14px;line-height:1.9;white-space:pre-wrap;word-break:break-all;color:#1f4d3a}
+  #toast{
+    position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);
+    background:rgba(24,38,32,.92);color:#fff;padding:10px 18px;border-radius:12px;
+    font-size:13px;opacity:0;pointer-events:none;transition:.25s;max-width:86vw;text-align:center;z-index:99;
+  }
+  #toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+  @media(max-width:560px){
+    body{padding:14px 10px 50px}
+    .card{padding:14px}
+    th,td{padding:7px 8px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🌿 生态桌面 · 管理员后台</h1>
+    <span class="tag">兑换码 · 设备 · 核销</span>
+    <span class="spacer"></span>
+    <button class="ghost" id="logoutBtn" hidden>退出</button>
+  </header>
+
+  <!-- 登录 -->
+  <section class="card" id="lockCard">
+    <div class="row">
+      <input type="password" id="passInput" placeholder="输入管理口令" autocomplete="current-password" style="flex:1;min-width:180px">
+      <button class="primary" id="loginBtn">进入后台</button>
+    </div>
+    <label class="mini" style="display:inline-flex;align-items:center;gap:6px;margin-top:10px">
+      <input type="checkbox" id="remember" checked> 在这台设备上记住口令
+    </label>
+    <p class="hint">只在本机保存，不会写进壁纸、也不会发给玩家。口令错 10 次会锁 10 分钟。</p>
+  </section>
+
+  <!-- 主界面 -->
+  <main id="app" hidden>
+    <section class="card stats" id="statsCard">
+      <div class="stat"><b id="stCodes">–</b><span>兑换码总数</span></div>
+      <div class="stat"><b id="stRedeems">–</b><span>已核销</span></div>
+      <div class="stat"><b id="stToday">–</b><span>今日核销</span></div>
+      <div class="stat"><b id="stDevices">–</b><span>设备总数</span></div>
+      <div class="stat"><b id="stActive">–</b><span>7 天活跃</span></div>
+    </section>
+
+    <section class="card">
+      <h2>生成兑换码</h2>
+      <div class="grid">
+        <label class="field">奖励内容<select id="rewardSel"></select></label>
+        <label class="field">使用次数
+          <select id="maxSel">
+            <option value="1">一次性（一码一用）</option>
+            <option value="-1">通用码（每台设备一次）</option>
+            <option value="3">限 3 次</option>
+            <option value="10">限 10 次</option>
+            <option value="50">限 50 次</option>
+          </select>
+        </label>
+        <label class="field">生成数量<input type="number" id="countInput" min="1" max="200" value="1"></label>
+        <label class="field">备注<input type="text" id="noteInput" placeholder="如：11 月活动 / 老玩家补偿" maxlength="40"></label>
+      </div>
+      <button class="primary" id="genBtn">生成</button>
+      <div id="genOut" hidden>
+        <div class="row" style="justify-content:space-between">
+          <b id="genTitle">已生成</b>
+          <span class="row" style="gap:8px">
+            <button class="ghost" id="copyAllBtn">复制全部</button>
+            <button class="ghost" id="dlBtn">下载 txt</button>
+            <button class="ghost" id="closeGenBtn">收起</button>
+          </span>
+        </div>
+        <pre id="genList"></pre>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>兑换码 <span class="mini" id="codeCount"></span></h2>
+      <div class="row" style="margin-bottom:10px">
+        <input type="text" id="codeFilter" placeholder="搜索兑换码 / 备注" style="flex:1;min-width:160px">
+        <button class="ghost" id="refreshBtn">刷新</button>
+      </div>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>兑换码</th><th>奖励</th><th>已用/上限</th><th>备注</th><th>生成时间</th><th></th></tr></thead>
+          <tbody id="codeBody"><tr><td colspan="6" class="empty">加载中…</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>核销记录 <span class="mini" id="rdCount"></span></h2>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>时间</th><th>兑换码</th><th>奖励</th><th>设备</th></tr></thead>
+          <tbody id="rdBody"><tr><td colspan="4" class="empty">加载中…</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>设备 <span class="mini" id="devCount"></span></h2>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>设备 ID</th><th>首次</th><th>最近</th><th>版本</th></tr></thead>
+          <tbody id="devBody"><tr><td colspan="4" class="empty">加载中…</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>修改管理口令</h2>
+      <div class="row">
+        <input type="password" id="newPass" placeholder="新口令（至少 4 位）" style="flex:1;min-width:180px" autocomplete="new-password">
+        <button class="ghost" id="setPassBtn">保存新口令</button>
+      </div>
+      <p class="hint">改完立刻生效，旧口令作废；这台设备会自动记住新口令。</p>
+    </section>
+  </main>
+</div>
+<div id="toast"></div>
+
+<script src="assets/cloud-sdk.js"></script>
+<script>
+(function(){
+  'use strict';
+  var ENDPOINT='https://wbapp-w7um43evjdxoiy7t2mbgoq.app.workbuddy.host';
+  var PKEY='wbpk_W7UM43eVjdxoiY7t2MBgOq_fbfWnBe4DmhENRdkf2HR9HBKKayTej7f';
+  var cloud=null, PASS='', lastCodes=[];
+
+  var $=function(s){return document.querySelector(s)};
+  function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+  function fmt(t){
+    if(!t)return '';var d=new Date(t);if(isNaN(d))return String(t);
+    var p=function(n){return n<10?'0'+n:n};
+    return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+' '+p(d.getHours())+':'+p(d.getMinutes());
+  }
+  var tmr=null;
+  function toast(msg){
+    var el=$('#toast');el.textContent=msg;el.classList.add('on');
+    clearTimeout(tmr);tmr=setTimeout(function(){el.classList.remove('on')},2200);
+  }
+
+  /* ---------- 奖励目录（与壁纸 applyReward 的写法对应） ---------- */
+  var REWARDS=[
+    ['金币',[
+      ['coin:100','100 金币'],['coin:500','500 金币'],['coin:2000','2000 金币'],['coin:10000','10000 金币']]],
+    ['鱼（直接放进池塘）',[
+      ['fish:gold','小金鱼'],['fish:koi','锦鲤'],['fish:angel','神仙鱼'],
+      ['fish:zebra','斑马鱼'],['fish:bkoi','蝴蝶鲤']]],
+    ['花种子 ×3',[
+      ['flower:cosmos','波斯菊'],['flower:daisy','小雏菊'],['flower:sunflower','向日葵'],
+      ['flower:lavender','薰衣草'],['flower:tulip','郁金香'],['flower:rose','玫瑰']]],
+    ['鱼粮',[
+      ['food:1:10','初级鱼粮 ×10'],['food:2:10','中级鱼粮 ×10'],
+      ['food:3:10','高级鱼粮 ×10'],['food:4:5','仙人鱼粮 ×5']]],
+    ['肥料',[
+      ['fert:1:5','初级肥料 ×5'],['fert:2:5','中级肥料 ×5'],
+      ['fert:3:5','高级肥料 ×5'],['fert:4:3','仙人肥料 ×3']]],
+    ['皮肤（永久解锁）',[
+      ['skin:sky:rose','暖暮天空'],['skin:sky:pale','淡青天空'],
+      ['skin:mtn:redrock','丹霞赤壁'],['skin:mtn:alpine','雪峰脊'],
+      ['skin:pond:emerald','翡翠池'],['skin:pond:deep','深潭'],
+      ['skin:brood:clay','红陶池'],['skin:cave:warm','暖岩洞'],['skin:cave:mossy','苔石洞']]]
+  ];
+  function fillRewards(){
+    var sel=$('#rewardSel'),h='';
+    REWARDS.forEach(function(g){
+      h+='<optgroup label="'+esc(g[0])+'">';
+      g[1].forEach(function(it){h+='<option value="'+esc(it[0])+'">'+esc(it[1])+'</option>'});
+      h+='</optgroup>';
+    });
+    sel.innerHTML=h;
+  }
+
+  /* ---------- 云端调用 ---------- */
+  function boot(){
+    if(typeof WorkBuddyCloud==='undefined'){toast('联网组件没加载成功，刷新试试');return false}
+    cloud=WorkBuddyCloud.createWorkBuddyCloud({endpoint:ENDPOINT,publishableKey:PKEY});
+    return true;
+  }
+  function api(action,args){
+    return cloud.database.rpc('admin_api',{p_pass:PASS,p_action:action,p_args:args||{}})
+      .then(function(r){
+        var o=r&&r.data;
+        if(!o)throw new Error('服务没有响应，检查网络');
+        if(!o.ok)throw new Error(o.msg||'操作失败');
+        return o;
+      });
+  }
+
+  /* ---------- 登录 ---------- */
+  function enter(pass,remember){
+    PASS=pass;
+    api('stats').then(function(){
+      localStorage.setItem('ecoAdminPass',remember?pass:'');
+      if(remember)sessionStorage.setItem('ecoAdminPass',pass);
+      $('#lockCard').hidden=true;$('#app').hidden=false;$('#logoutBtn').hidden=false;
+      loadAll();
+    }).catch(function(e){toast(e.message);PASS=''});
+  }
+  $('#loginBtn').onclick=function(){
+    var v=$('#passInput').value.trim();
+    if(!v)return toast('先输入管理口令');
+    enter(v,$('#remember').checked);
+  };
+  $('#passInput').addEventListener('keydown',function(e){if(e.key==='Enter')$('#loginBtn').click()});
+  $('#logoutBtn').onclick=function(){
+    localStorage.removeItem('ecoAdminPass');sessionStorage.removeItem('ecoAdminPass');
+    PASS='';$('#app').hidden=true;$('#lockCard').hidden=false;$('#logoutBtn').hidden=true;
+    $('#passInput').value='';
+  };
+
+  /* ---------- 数据加载 ---------- */
+  function loadAll(){
+    api('stats').then(function(o){
+      $('#stCodes').textContent=o.codes;
+      $('#stRedeems').textContent=o.redeems;
+      $('#stToday').textContent=o.today;
+      $('#stDevices').textContent=o.devices;
+      $('#stActive').textContent=o.active;
+    }).catch(function(e){toast(e.message)});
+    api('list').then(function(o){
+      renderCodes(o.rows||[]);
+    }).catch(function(e){$('#codeBody').innerHTML='<tr><td colspan="6" class="empty">'+esc(e.message)+'</td></tr>'});
+    api('redeems').then(function(o){
+      renderRedeems(o.rows||[]);
+    }).catch(function(){});
+    api('devices').then(function(o){
+      renderDevices(o.rows||[]);
+    }).catch(function(){});
+  }
+  function renderCodes(rows){
+    var q=($('#codeFilter').value||'').trim().toUpperCase();
+    var list=q?rows.filter(function(r){
+      return (r.code||'').indexOf(q)>=0 || (r.note||'').toUpperCase().indexOf(q)>=0;
+    }):rows;
+    $('#codeCount').textContent='共 '+list.length+' 个';
+    if(!list.length){
+      $('#codeBody').innerHTML='<tr><td colspan="6" class="empty">'+(rows.length?'没有匹配的兑换码':'还没有兑换码，上面生成一批吧')+'</td></tr>';
+      return;
+    }
+    $('#codeBody').innerHTML=list.map(function(r){
+      var max=r.max<0?'∞':r.max, used=r.used||0;
+      var full=r.max>=0&&used>=r.max;
+      var pill=full?'<span class="pill off">已用完</span>':'<span class="pill ok">可用</span>';
+      return '<tr>'+
+        '<td class="code">'+esc(r.code)+'</td>'+
+        '<td>'+esc(rewardName(r.reward))+'</td>'+
+        '<td>'+used+' / '+max+' '+pill+'</td>'+
+        '<td>'+esc(r.note||'—')+'</td>'+
+        '<td class="mini">'+esc(fmt(r.at))+'</td>'+
+        '<td><button class="danger" data-del="'+esc(r.code)+'">删除</button></td>'+
+      '</tr>';
+    }).join('');
+  }
+  function rewardName(rw){
+    for(var i=0;i<REWARDS.length;i++){
+      for(var j=0;j<REWARDS[i][1].length;j++){
+        if(REWARDS[i][1][j][0]===rw)return REWARDS[i][1][j][1];
+      }
+    }
+    return rw||'—';
+  }
+  function renderRedeems(rows){
+    $('#rdCount').textContent='最近 '+rows.length+' 条';
+    $('#rdBody').innerHTML=rows.length?rows.map(function(r){
+      return '<tr><td class="mini">'+esc(fmt(r.at))+'</td><td class="code">'+esc(r.code)+'</td>'+
+        '<td>'+esc(rewardName(r.reward))+'</td><td class="mini">'+esc(String(r.device||'').slice(0,14))+'</td></tr>';
+    }).join(''):'<tr><td colspan="4" class="empty">还没有人兑换</td></tr>';
+  }
+  function renderDevices(rows){
+    $('#devCount').textContent='共 '+rows.length+' 台';
+    $('#devBody').innerHTML=rows.length?rows.map(function(d){
+      return '<tr><td class="mini">'+esc(String(d.device||'').slice(0,18))+'</td>'+
+        '<td class="mini">'+esc(fmt(d.first))+'</td><td class="mini">'+esc(fmt(d.last))+'</td>'+
+        '<td>'+(d.ver?'v'+esc(d.ver):'—')+'</td></tr>';
+    }).join(''):'<tr><td colspan="4" class="empty">还没有设备登记</td></tr>';
+  }
+
+  /* ---------- 生成 ---------- */
+  $('#genBtn').onclick=function(){
+    var btn=this;
+    var reward=$('#rewardSel').value;
+    var max=parseInt($('#maxSel').value,10);
+    var count=Math.max(1,Math.min(200,parseInt($('#countInput').value,10)||1));
+    var note=($('#noteInput').value||'').trim();
+    btn.disabled=true;btn.textContent='生成中…';
+    api('gen',{reward:reward,max:max,count:count,note:note}).then(function(o){
+      btn.disabled=false;btn.textContent='生成';
+      lastCodes=o.codes||[];
+      $('#genOut').hidden=false;
+      $('#genTitle').textContent='已生成 '+lastCodes.length+' 个 · '+rewardName(reward)+
+        (o.max<0?' · 通用码':' · 一次性');
+      $('#genList').textContent=lastCodes.join('\n');
+      toast('✅ 生成成功，'+lastCodes.length+' 个');
+      loadAll();
+    }).catch(function(e){
+      btn.disabled=false;btn.textContent='生成';toast(e.message);
+    });
+  };
+  $('#copyAllBtn').onclick=function(){
+    var txt=lastCodes.join('\n');
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(txt).then(function(){toast('已复制到剪贴板')},fallback);
+    }else fallback();
+    function fallback(){
+      var ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);
+      ta.select();try{document.execCommand('copy');toast('已复制到剪贴板')}catch(e){toast('复制失败，手动选中吧')}
+      document.body.removeChild(ta);
+    }
+  };
+  $('#dlBtn').onclick=function(){
+    var blob=new Blob([lastCodes.join('\n')+'\n'],{type:'text/plain;charset=utf-8'});
+    var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+    a.download='eco-codes-'+Date.now()+'.txt';a.click();
+    setTimeout(function(){URL.revokeObjectURL(a.href)},3000);
+  };
+  $('#closeGenBtn').onclick=function(){$('#genOut').hidden=true};
+
+  /* ---------- 删除 / 搜索 / 刷新 ---------- */
+  $('#codeBody').addEventListener('click',function(e){
+    var b=e.target.closest('[data-del]');if(!b)return;
+    var code=b.getAttribute('data-del');
+    if(!confirm('删除兑换码 '+code+'？\n已核销的记录会保留。'))return;
+    api('del',{code:code}).then(function(){toast('已删除 '+code);loadAll()}).catch(function(e2){toast(e2.message)});
+  });
+  $('#codeFilter').addEventListener('input',function(){
+    api('list').then(function(o){renderCodes(o.rows||[])}).catch(function(){});
+  });
+  $('#refreshBtn').onclick=function(){toast('刷新中…');loadAll()};
+
+  /* ---------- 改口令 ---------- */
+  $('#setPassBtn').onclick=function(){
+    var np=($('#newPass').value||'').trim();
+    if(np.length<4)return toast('新口令至少 4 位');
+    api('setpass',{pass:np}).then(function(){
+      PASS=np;localStorage.setItem('ecoAdminPass',np);
+      $('#newPass').value='';toast('口令已更新');
+    }).catch(function(e){toast(e.message)});
+  };
+
+  /* ---------- 启动 ---------- */
+  fillRewards();
+  if(!boot())return;
+  var saved=localStorage.getItem('ecoAdminPass')||sessionStorage.getItem('ecoAdminPass')||'';
+  if(saved){$('#passInput').value=saved;enter(saved,true)}
+})();
+</script>
+</body>
+</html>

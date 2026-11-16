@@ -1,11 +1,11 @@
 {
- "version": "15",
- "builtAt": 1794816354008,
+ "version": "16",
+ "builtAt": 1794817945000,
  "files": [
   {
    "path": "index.html",
-   "size": 243675,
-   "hash": "ec66df135e91dc640fff653251e6b8d341dc855819fa46d155350bf718f3be82"
+   "size": 244513,
+   "hash": "5517d3241b23f4ba4849cdf07ba927f305df2da848d8b7da650499fe2d6d1e03"
   },
   {
    "path": "assets/cloud-sdk.js",
@@ -90,7 +90,7 @@
   {
    "path": "version.txt",
    "size": 2,
-   "hash": "e629fa6598d732768f7c726b4b621285f9c3b85303900aa912017db7617d8bdb"
+   "hash": "b17ef6d19c7a5b1ee83b907c595526dcb1eb06db8227d650d5dda0a9f4ce8cd9"
   }
  ]
 }

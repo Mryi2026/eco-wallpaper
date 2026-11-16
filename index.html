@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<title>生态桌面 · EcoDesk v15</title>
+<title>生态桌面 · EcoDesk v16</title>
 <style>
   html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#9db86a;font-family:"Microsoft YaHei",system-ui,sans-serif;user-select:none;cursor:default}
   #bg,#sky,#mid,#gl,#c{position:absolute;inset:0;display:block}
@@ -4430,6 +4430,28 @@ setInterval(netCheckVersion,24*60*60*1000);          /* 一天一检 */
 
 loadAll();
 ecoRaf=requestAnimationFrame(loop);
+
+/* —— 重复点击去重 ——
+   独立版宿主挂在桌面层收不到鼠标，会把点击转发进来；某些情况下真实鼠标事件也会同时到达，
+   同一个点会连着来两次。这里在 window 捕获阶段把 260ms 内同点的第二次丢掉，
+   不影响正常点击、双击和拖动。 */
+(function(){
+  function makeGuard(){
+    let lastT=0,lastK='';
+    return function(e){
+      const k=Math.round(e.clientX/3)+','+Math.round(e.clientY/3);
+      const now=e.timeStamp||Date.now();
+      if(k===lastK&&now-lastT<260){
+        e.stopImmediatePropagation();
+        if(e.cancelable)e.preventDefault();
+        return;
+      }
+      lastK=k;lastT=now;
+    };
+  }
+  window.addEventListener('pointerdown',makeGuard(),true);
+  window.addEventListener('click',makeGuard(),true);
+})();
 </script>
 </body>
 </html>

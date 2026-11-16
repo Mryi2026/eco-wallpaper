@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<title>生态桌面 · EcoDesk v14</title>
+<title>生态桌面 · EcoDesk v15</title>
 <style>
   html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#9db86a;font-family:"Microsoft YaHei",system-ui,sans-serif;user-select:none;cursor:default}
   #bg,#sky,#mid,#gl,#c{position:absolute;inset:0;display:block}
@@ -464,12 +464,28 @@ const cv=document.getElementById('c'),ctx=cv.getContext('2d');
 let W=innerWidth,H=innerHeight;
 function resize(){W=innerWidth;H=innerHeight;
   bgCv.width=W;bgCv.height=H;cv.width=W;cv.height=H;midCv.width=W;midCv.height=H;
+  bgDirty=true;
   skyResize();
   if(renderer){renderer.setPixelRatio(Math.min(Q.dpr,window.devicePixelRatio||1));
     renderer.setSize(W,H,false);glCv.style.width=W+'px';glCv.style.height=H+'px'}
   setView()}
 addEventListener('resize',resize);
 let bgImg=null,BW=1536,BH=1024,BHv=963,VS=1,OX=0,OY=0;
+/* 背景离屏缓存：整幅背景图每帧重新高质量缩放非常吃 GPU/带宽（尤其 2K/4K 屏），
+   改为画到离屏画布一次，之后每帧只做 1:1 拷贝；鱼影仍单独每帧绘制。
+   bgDirty 在 视口/画质/换背景图 时置位重建，画面结果与原来完全一致。 */
+const bgCache=document.createElement('canvas');
+let bgDirty=true;
+function rebuildBgCache(){
+  if(bgCache.width!==W||bgCache.height!==H){bgCache.width=W;bgCache.height=H}
+  const g=bgCache.getContext('2d');
+  g.clearRect(0,0,W,H);
+  if(bgImg){
+    g.imageSmoothingQuality='high';
+    g.drawImage(bgImg,0,0,BW,BHv,OX,OY,BW*VS,BHv*VS);
+  }
+  bgDirty=false;
+}
 function clampV(v,a,b){return Math.max(a,Math.min(b,v))}
 function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
 function setView(){
@@ -480,6 +496,7 @@ function setView(){
   const fx=(BW*VS-W)/(BW*VS),fy=(BHv*VS-H)/(BHv*VS);
   if(fx>0.18)OX=clampV(W/2-PD.cx*BW*VS,W-BW*VS,0);
   if(fy>0.22)OY=clampV(H/2-(0.62*PD.cy+0.38*0.9)*BHv*VS,H-BHv*VS,0);
+  bgDirty=true;
   syncGLCamera();
   layoutMenu();
 }
@@ -514,7 +531,7 @@ function loadAll(){return Promise.all(Object.entries(ASSETS).map(([k,src])=>new 
       im.onload=()=>res(im);im.onerror=()=>res(null);im.src=u})))
       .then(ims=>{if(ims[2])FISH_STAGE_IMG[ART2K[k]||k]=ims})));
 }).then(()=>{
-  bgImg=sprites.bg;if(bgImg){BW=bgImg.width;BH=bgImg.height;setView()}
+  bgImg=sprites.bg;if(bgImg){BW=bgImg.width;BH=bgImg.height;setView();bgDirty=true}
   ready=true;layoutMenu();
   try{S.snap=S.snap||gardenSnap()}catch(e){}
   setTimeout(()=>{                              /* 回来时管家先汇报一遍 */
@@ -587,9 +604,11 @@ let SKY_SCALE=0.62;     // 天空内部分辨率缩放：由画质档位接管�
 const Q_KEY='ecoDeskQualityV1';
 const Q_LEVELS={
   /* rain/snow/splash 是"粒子预算上限"，实际密度由天气强度档（小/中/大）决定 */
+  /* 核显（Intel UHD / Vega 这类）跑满 30 帧压力很大，档位按"够顺滑即可"来定：
+     60 帧只在独显上选；中档 25 帧、低档 20 帧，肉眼和 30 帧差别很小，CPU 能再省 20~40% */
   high:{label:'高',sub:'60 帧',frame:16.6,sky:0.75,dpr:2.0,cloud:1.00,rain:780,snow:520,splash:220},
-  mid :{label:'中',sub:'30 帧',frame:33.0,sky:0.62,dpr:1.25,cloud:0.75,rain:560,snow:380,splash:150},
-  low :{label:'低',sub:'24 帧',frame:41.0,sky:0.46,dpr:1.0, cloud:0.45,rain:300,snow:210,splash:90}
+  mid :{label:'中',sub:'25 帧',frame:40.0,sky:0.62,dpr:1.25,cloud:0.75,rain:560,snow:380,splash:150},
+  low :{label:'低',sub:'20 帧',frame:50.0,sky:0.46,dpr:1.0, cloud:0.45,rain:300,snow:210,splash:90}
 };
 let qMode='auto',qKey='mid',qAuto='mid';
 let Q=Object.assign({},Q_LEVELS.mid);
@@ -4032,10 +4051,28 @@ document.addEventListener('mousemove',e=>{QUIET.hover=e.clientX<quietZoneW()});
 
 /* ================= 主循环（三层：bg 背景鱼影 → gl 3D 鱼 → c 水面·洞窟·天气） ================= */
 let last=0;
+/* ---- 省电：前台全屏暂停 / 空闲降频（只影响绘制频率，不影响任何玩法与计时）----
+   宿主（免安装版）会在检测到全屏应用或锁屏时调用 window.__ecoPause(true)，
+   浏览器/Lively 下没人调用就一直是 false，行为与以前完全一致。 */
+let ECO_PAUSED=false,ecoRaf=0,lastAct=(typeof performance!=='undefined'?performance.now():Date.now());
+let ecoFrame=0,ecoSlowDt=0;   /* 慢层(天空/云)分频计数与累积 dt */
+['mousemove','mousedown','wheel','keydown','touchstart'].forEach(ev=>
+  addEventListener(ev,()=>{lastAct=performance.now()},{passive:true}));
+window.__ecoPause=function(on){
+  const was=ECO_PAUSED;ECO_PAUSED=!!on;
+  if(was&&!ECO_PAUSED){last=0;lastAct=performance.now();if(!ecoRaf)ecoRaf=requestAnimationFrame(loop)}
+  return ECO_PAUSED;
+};
+window.__ecoState=function(){return ECO_PAUSED?'paused':((performance.now()-lastAct>45000)?'idle':'active')};
 function loop(t){
-  requestAnimationFrame(loop);
-  /* 帧预算：探测期间不限帧（否则测不出真实余量），平时按档位封顶 */
-  const fmin=qProbe?0:Q.frameMin;
+  if(ECO_PAUSED){ecoRaf=0;return}      /* 暂停：连 rAF 都不再排队，CPU 归零 */
+  ecoRaf=requestAnimationFrame(loop);
+  /* 帧预算：探测期间不限帧（否则测不出真实余量），平时按档位封顶；
+     鼠标键盘 45 秒无操作 → 降到 12 帧（仍在动，只是更省） */
+  const idleMs=performance.now()-lastAct;
+  /* 注意：档位字段名是 frame（毫秒/帧），曾经误写成 frameMin 导致帧率上限从未生效，
+     一直按显示器刷新率（60 帧）满速跑——这是 CPU 占用偏高的主因之一 */
+  const fmin=qProbe?0:(idleMs>45000?83.3:Q.frame);
   const dtms=t-last;
   if(dtms<fmin)return;
   last=t;const dt=Math.min(dtms/1000,0.2);
@@ -4046,16 +4083,25 @@ function loop(t){
       if(sp&&sp.style.display==='block')updateQualityUI()}
   }
   probeTick(t);
-  /* 天空层：WebGL 拟真渲染（屏幕空间，独立于背景变换） */
-  renderSkyGL(t,dt);
-  /* 中景层：真实云精灵 + 山脉剪影 + 地平线雾 */
-  renderMid(t,dt);
-  /* 背景层 */
-  bgCtx.clearRect(0,0,W,H);
+  /* 天空层 + 中景层：这两层变化很慢（太阳走弧线、云飘、雾），没必要跟着 30 帧重算。
+     按档位隔帧更新（高=每2帧，中=每3帧，低=每4帧），dt 累积下传，运动速度与原来一致。
+     这一步是 GPU 占用的主要来源，分频后画面肉眼无差、GPU 明显降。 */
+  ecoFrame++;ecoSlowDt+=dt;
+  const ecoSlowEvery=(Q.key==='high'?2:(Q.key==='mid'?3:4));
+  if(ecoFrame%ecoSlowEvery===0){
+    renderSkyGL(t,ecoSlowDt);      /* WebGL 拟真天空（程序化着色器，全屏最贵） */
+    renderMid(t,ecoSlowDt);        /* 云精灵 + 山脉剪影 + 地平线雾 */
+    ecoSlowDt=0;
+  }
+  /* 背景层：用离屏缓存做 1:1 拷贝（原来每帧都要整幅高质量缩放，GPU 很吃），
+     视口/画质/背景图变化时才重建缓存；鱼影照旧每帧绘制 */
   if(bgImg){
-    bgCtx.imageSmoothingQuality='high';
-    bgCtx.drawImage(bgImg,0,0,BW,BHv,OX,OY,BW*VS,BHv*VS);
+    if(bgDirty)rebuildBgCache();
+    bgCtx.clearRect(0,0,W,H);
+    bgCtx.drawImage(bgCache,0,0);
     drawShadows();
+  }else{
+    bgCtx.clearRect(0,0,W,H);
   }
   /* 鱼层：3D 渲染；WebGL 不可用时也照常推进游动逻辑。
      try 保护：鱼层任何异常都不许打断后续的洞窟/狐狸/天气/夜色渲染 */
@@ -4383,7 +4429,7 @@ setTimeout(()=>{netRegister();bindRedeemUI()},3000);
 setInterval(netCheckVersion,24*60*60*1000);          /* 一天一检 */
 
 loadAll();
-requestAnimationFrame(loop);
+ecoRaf=requestAnimationFrame(loop);
 </script>
 </body>
 </html>
